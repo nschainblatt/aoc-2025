@@ -11,22 +11,31 @@
 (define (find-largest-joltage line)
   (let ((bank (string->number-list line)))
 
-    ;; Returns a pair of the largest number with it's index.
-    (define (find-left-largest index nums current-largest-pair)
-      (cond ((null? nums) current-largest-pair)
-	    ((and (> (car nums) (pair-value current-largest-pair)) (not-last-index bank index)) (find-left-largest (inc index) (cdr nums) (make-index-value-pair index (car nums))))
-	    (else (find-left-largest (inc index) (cdr nums) current-largest-pair))))
+    (define (find-batteries nums)
 
-    ;; Returns a pair of the largest number with it's index.
-    (define (find-right-largest nums current-largest)
-      (cond ((null? nums) current-largest)
-	    ;; New largest and it's not the last number
-	    ((and (> (car nums) current-largest)) (find-right-largest (cdr nums) (car nums)))
-	    (else (find-right-largest (cdr nums) current-largest))))
+      ;; Returns a index-value-pair of the largest number in the sequence.
+      (define (find-largest index nums current-largest-pair)
+	(cond ((null? nums) current-largest-pair)
+	      ((> (car nums) (pair-value current-largest-pair)) (find-largest (inc index) (cdr nums) (make-index-value-pair index (car nums))))
+	      (else (find-largest (inc index) (cdr nums) current-largest-pair))))
 
-    (let* ((left-largest-pair (find-left-largest 0 bank (make-index-value-pair -1 -1)))
-	   (right-largest-value (find-right-largest (sublist bank (inc (pair-index left-largest-pair)) (length bank)) -1)))
-      (string->number (string (pair-value left-largest-pair) right-largest-value)))))
+      ;; Returns a string representing the largest 12 digit number in the sequence of nums.
+      ;; It does this by iterating through valid ranges for each digit in a 12 digit number,
+      ;; starting with the most significant digit, all the way to the least.
+      ;; A valid range is one where the current digit may reside, with enough numbers remaining (depends on the placement).
+      ;; For example the most significant bit (12th from the right) must have room for at least 11 digits to the right of it
+      ;; in the sequence.
+      ;; We can be sure that this will find the largest possible 12 digit number in the sequence because we start searching for
+      ;; the most significant bit.
+      ;; Note that end-index is exclusive.
+      (define (iter start-index end-index string-result)
+	(if (out-of-bounds? nums (dec end-index))
+	  string-result
+	  (let ((index-value-pair (find-largest start-index (sublist nums start-index end-index) (make-index-value-pair -1 -1))))
+	    (iter (inc (pair-index index-value-pair)) (inc end-index) (string string-result (pair-value index-value-pair))))))
+
+      (iter 0 (- (length nums) 11) ""))
+    (string->number (find-batteries bank))))
 
 (define (string->number-list str)
   (map (lambda (c) (string->number (string c))) (string->list str)))
@@ -38,9 +47,15 @@
 (define (inc x)
   (+ x 1))
 
+(define (dec x)
+  (- x 1))
+
 (define (not-last-index seq index)
   (let ((last-index (- (length seq) 1)))
     (< index last-index)))
+
+(define (out-of-bounds? seq index)
+  (> index (- (length seq) 1)))
 
 (define (make-index-value-pair index value)
   (cons index value))
