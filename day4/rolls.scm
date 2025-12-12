@@ -3,8 +3,14 @@
     (if (eof-object? line)
       rows-cols
       (iter (read-line file-port) (append rows-cols (list (string->list line))))))
-  (let ((input (iter (read-line file-port) '())))
-    (handle-rows-cols input)))
+  (let* ((input (iter (read-line file-port) '())) ;; Note: input changes over time (assignment).
+	 (initial (handle-rows-cols input)))
+    (define (repeater prev sum)
+      (if (= prev 0)
+	sum
+	(let ((output (handle-rows-cols input)))
+	  (repeater output (+ sum output)))))
+    (repeater initial initial)))
 
 (define (handle-rows-cols rows-cols)
   (define (row-iter row-index rows sum)
@@ -21,7 +27,7 @@
 				     0
 				     (if (> (get-rolls-surrounding-index row-index col-index rows-cols row) 3)
 				       0
-				       1)))))))
+				       (begin (set-ref! (list-ref rows-cols row-index) col-index #\.) 1))))))))
 	(row-iter (inc row-index) (cdr rows) (+ sum (col-iter 0 (car rows) 0))))))
   (row-iter 0 rows-cols 0))
 
