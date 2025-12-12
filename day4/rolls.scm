@@ -139,6 +139,15 @@
   (newline)
   (for-each (lambda (x) (display x) (display " ")) args))
 
+(define (set-ref! seq index value)
+  (define (iter sub-seq i)
+    (if (= i index)
+      (set-car! sub-seq value)
+      (iter (cdr sub-seq) (inc i))))
+  (cond ((< index 0) (error "index must be positive"))
+	((> index (dec (length seq))) (error "index out of bounds"))
+	(else (iter seq 0))))
+
 (define (inc x)
   (+ x 1))
 
